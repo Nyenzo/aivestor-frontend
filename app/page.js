@@ -1,9 +1,16 @@
-import Image from "next/image";
+// app/page.js
+import { Typography, Container } from '@mui/material';
 
-export default function Home() {
+// Home page for Aivestor app
+export default HomePage() ;{
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold">Welcome to Aivestor</h1>
-    </div>
+    <Container>
+      <Typography variant="h4" align="center" gutterBottom>
+        Welcome to Aivestor!
+      </Typography>
+      <Typography variant="body1" align="center" >
+        Your AI-powered investment advisor. Log in or register to get stock predictions and portfolio recommendations.
+      </Typography>
+    </Container>
   );
 }
