@@ -1,114 +1,167 @@
 'use client';
 
-// Managing dashboard data and real-time updates
 import { useState, useEffect } from 'react';
-import Head from 'next/head';
-import { motion } from 'framer-motion';
+import { io } from 'socket.io-client';
+import axios from 'axios';
 import { Chart } from 'react-chartjs-2';
 import { Chart as ChartJS, LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Legend } from 'chart.js';
-import axios from 'axios';
-import { io } from 'socket.io-client';
+import { motion, AnimatePresence } from 'framer-motion';
 
 ChartJS.register(LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Legend);
 
-export default function Dashboard() {
-  const [portfolio, setPortfolio] = useState({ value: 0, dailyChange: 0, totalGain: 0 });
-  const [stocks, setStocks] = useState([]);
-  const [nudges, setNudges] = useState([]);
-  const token = localStorage.getItem('token');
+const Sidebar = () => (
+  <aside className="bg-gray-900 text-white w-64 min-h-screen flex flex-col p-6 border-r border-gray-800">
+    <h2 className="text-2xl font-bold mb-8">Aivestor</h2>
+    <nav className="flex flex-col gap-4">
+      <a href="/dashboard" className="hover:text-blue-400 transition">Dashboard</a>
+      <a href="/users" className="hover:text-blue-400 transition">Portfolio</a>
+      <a href="/risk-assessment" className="hover:text-blue-400 transition">Risk Assessment</a>
+      <a href="/login" className="hover:text-blue-400 transition">Logout</a>
+    </nav>
+    <div className="mt-auto text-xs text-gray-500">&copy; 2024 Aivestor</div>
+  </aside>
+);
 
-  // Fetching initial data and setting up WebSocket for real-time updates
+export default function Dashboard() {
+  const [portfolio, setPortfolio] = useState(null);
+  const [market, setMarket] = useState(null);
+  const [nudges, setNudges] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : '';
+
   useEffect(() => {
     const socket = io('http://localhost:5000');
     socket.on('nudge', (nudge) => setNudges((prev) => [...prev, nudge]));
+    socket.on('price_update', (update) => {
+      setMarket((prev) => prev ? { ...prev, ...update } : prev);
+    });
+    return () => socket.disconnect();
+  }, []);
 
+  useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
-        const portfolioRes = await axios.get('http://localhost:5000/api/portfolios/user/1', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const [portfolioRes, marketRes] = await Promise.all([
+          axios.get('http://localhost:5000/api/portfolios/user/1', {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get('http://localhost:5000/api/market/top', {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
         const value = portfolioRes.data.reduce((sum, p) => sum + p.quantity * p.purchase_price, 0);
-        setPortfolio({ value, dailyChange: 0, totalGain: 0 });
-
-        const stocksRes = await axios.get('http://localhost:5000/api/predict/AAPL', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setStocks([stocksRes.data]);
+        const dailyChange = portfolioRes.data.reduce((sum, p) => sum + (p.daily_change || 0), 0);
+        const totalGain = portfolioRes.data.reduce((sum, p) => sum + (p.total_gain || 0), 0);
+        setPortfolio({ value, dailyChange, totalGain });
+        setMarket(marketRes.data);
+        setError('');
       } catch (err) {
-        console.error('Error fetching data:', err);
+        setError('Error fetching data');
       }
+      setLoading(false);
     };
     fetchData();
-
-    return () => socket.disconnect();
   }, [token]);
 
-  // Configuring chart data for portfolio visualization
   const portfolioData = {
-    labels: ['10 am', '7 pm', '9 pm'],
+    labels: ['Yesterday', 'Today'],
     datasets: [
       {
-        label: 'Portfolio Value (£)',
-        data: [portfolio.value - 100, portfolio.value - 50, portfolio.value],
-        borderColor: 'rgba(0, 255, 0, 0.7)',
-        backgroundColor: 'rgba(0, 255, 0, 0.2)',
+        label: 'Portfolio Value',
+        data: [portfolio?.value - (portfolio?.dailyChange || 0), portfolio?.value],
+        borderColor: 'rgba(59,130,246,0.7)',
+        backgroundColor: 'rgba(59,130,246,0.2)',
         fill: true,
       },
     ],
   };
 
-  const options = {
+  const chartOptions = {
     responsive: true,
     plugins: { legend: { display: false }, tooltip: { enabled: true } },
     scales: { x: { display: false }, y: { display: false } },
   };
 
-  // Rendering the dashboard UI with portfolio and nudge sections
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <Head>
-        <title>Aivestor Dashboard</title>
-      </Head>
-      <header className="p-4 bg-gray-800 flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Aivestor</h1>
-        <div>
-          <button className="mr-4 text-blue-400">Home</button>
-          <button className="text-blue-400">News</button>
-        </div>
-      </header>
-      <div className="overflow-x-auto whitespace-nowrap p-4 bg-gray-800">
-        {stocks.map((stock) => (
-          <motion.div
-            key={stock.ticker}
-            className="inline-block mx-2 p-2 bg-gray-700 rounded-lg"
-            initial={{ x: 100 }}
-            animate={{ x: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="text-sm">{stock.ticker}</div>
-            <div className="text-lg font-bold">£{stock.short_term_probabilities.Buy.toFixed(2)}</div>
-            <div className={stock.change >= 0 ? 'text-green-400' : 'text-red-400'}>+{stock.change}%</div>
-            <Chart type="line" data={portfolioData} options={options} width={100} height={50} />
-          </motion.div>
-        ))}
-      </div>
-      <div className="p-4">
-        <h2 className="text-xl font-semibold">Portfolio Performance</h2>
-        <div className="bg-gray-800 p-4 rounded-lg mt-2">
-          <div className="text-2xl font-bold">£{portfolio.value.toFixed(2)}</div>
-          <div className={portfolio.dailyChange >= 0 ? 'text-green-400' : 'text-red-400'}>
-            {portfolio.dailyChange >= 0 ? '+' : ''}{portfolio.dailyChange.toFixed(2)} ({((portfolio.dailyChange / portfolio.value) * 100).toFixed(2)}%) Today
+    <div className="flex min-h-screen bg-gray-950">
+      <Sidebar />
+      <main className="flex-1 p-8 overflow-y-auto">
+        <header className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-white">Dashboard</h1>
+          <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Refresh</button>
+        </header>
+        {loading ? (
+          <div className="animate-pulse space-y-6">
+            <div className="h-32 bg-gray-800 rounded-lg" />
+            <div className="h-16 bg-gray-800 rounded-lg" />
+            <div className="h-16 bg-gray-800 rounded-lg" />
           </div>
-          <div className="text-green-400">+£{portfolio.totalGain.toFixed(2)} Total Gain</div>
-          <Chart type="line" data={portfolioData} options={options} />
-        </div>
-        <h2 className="text-xl font-semibold mt-6">Nudges</h2>
-        <div className="bg-gray-800 p-4 rounded-lg mt-2">
-          {nudges.map((nudge, index) => (
-            <p key={index} className="text-gray-300">{nudge.message}</p>
-          ))}
-        </div>
-      </div>
+        ) : error ? (
+          <div className="text-red-400">{error}</div>
+        ) : (
+          <>
+            <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <motion.div layout className="bg-gray-900 p-6 rounded-lg shadow-lg flex flex-col items-center">
+                <div className="text-gray-400 mb-2">Portfolio Value</div>
+                <div className="text-3xl font-bold text-blue-400">£{portfolio.value.toFixed(2)}</div>
+                <div className={portfolio.dailyChange >= 0 ? 'text-green-400' : 'text-red-400'}>
+                  {portfolio.dailyChange >= 0 ? '+' : ''}{portfolio.dailyChange.toFixed(2)} ({((portfolio.dailyChange / portfolio.value) * 100).toFixed(2)}%) Today
+                </div>
+                <div className={portfolio.totalGain >= 0 ? 'text-green-400' : 'text-red-400'}>
+                  {portfolio.totalGain >= 0 ? '+' : ''}{portfolio.totalGain.toFixed(2)} Total Gain
+                </div>
+                <div className="w-full mt-4">
+                  <Chart type="line" data={portfolioData} options={chartOptions} height={60} />
+                </div>
+              </motion.div>
+              <motion.div layout className="bg-gray-900 p-6 rounded-lg shadow-lg">
+                <div className="text-gray-400 mb-2">Top Gainers</div>
+                <ul>
+                  {market?.gainers?.map((stock) => (
+                    <li key={stock.ticker} className="flex justify-between items-center mb-2">
+                      <span className="font-semibold">{stock.ticker}</span>
+                      <span className="text-green-400 font-mono">+{stock.change_percent.toFixed(2)}%</span>
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+              <motion.div layout className="bg-gray-900 p-6 rounded-lg shadow-lg">
+                <div className="text-gray-400 mb-2">Top Losers</div>
+                <ul>
+                  {market?.losers?.map((stock) => (
+                    <li key={stock.ticker} className="flex justify-between items-center mb-2">
+                      <span className="font-semibold">{stock.ticker}</span>
+                      <span className="text-red-400 font-mono">{stock.change_percent.toFixed(2)}%</span>
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+            </section>
+            <section className="bg-gray-900 p-6 rounded-lg shadow-lg mb-8">
+              <h2 className="text-xl font-semibold mb-4 text-white">Nudges & Notifications</h2>
+              <AnimatePresence>
+                {nudges.length === 0 ? (
+                  <div className="text-gray-400">No nudges yet.</div>
+                ) : (
+                  nudges.map((nudge, idx) => (
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="bg-gray-800 p-4 rounded mb-2 text-gray-200"
+                    >
+                      {nudge.message}
+                    </motion.div>
+                  ))
+                )}
+              </AnimatePresence>
+            </section>
+          </>
+        )}
+      </main>
     </div>
   );
 }

@@ -10,118 +10,164 @@ import axios from 'axios';
 
 ChartJS.register(LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Legend);
 
-// Reusable price graph component
-const PriceGraph = ({ data, options }) => {
-  // Rendering the price graph with provided data and options
-  return <Chart type="line" data={data} options={options} width={150} height={75} />;
-};
+const Sidebar = () => (
+  <aside className="bg-gray-900 text-white w-64 min-h-screen flex flex-col p-6 border-r border-gray-800">
+    <h2 className="text-2xl font-bold mb-8">Aivestor</h2>
+    <nav className="flex flex-col gap-4">
+      <a href="/dashboard" className="hover:text-blue-400 transition">Dashboard</a>
+      <a href="/users" className="hover:text-blue-400 transition">Portfolio</a>
+      <a href="/risk-assessment" className="hover:text-blue-400 transition">Risk Assessment</a>
+      <a href="/login" className="hover:text-blue-400 transition">Logout</a>
+    </nav>
+    <div className="mt-auto text-xs text-gray-500">&copy; 2024 Aivestor</div>
+  </aside>
+);
+
+const MiniChart = ({ data, color }) => (
+  <Chart
+    type="line"
+    data={data}
+    options={{
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: { enabled: true } },
+      scales: { x: { display: false }, y: { display: false } },
+    }}
+    width={80}
+    height={40}
+  />
+);
 
 export default function Users() {
-  const [portfolio, setPortfolio] = useState({ value: 0, dailyChange: 0, totalGain: 0 });
+  const [portfolio, setPortfolio] = useState([]);
   const [topGainers, setTopGainers] = useState([]);
   const [topLosers, setTopLosers] = useState([]);
-  const token = localStorage.getItem('token');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : '';
 
-  // Fetching user portfolio and market data
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
-        const portfolioRes = await axios.get('http://localhost:5000/api/portfolios/user/1', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const value = portfolioRes.data.reduce((sum, p) => sum + p.quantity * p.purchase_price, 0);
-        const dailyChange = portfolioRes.data.reduce((sum, p) => sum + p.daily_change, 0);
-        const totalGain = portfolioRes.data.reduce((sum, p) => sum + p.total_gain, 0);
-        setPortfolio({ value, dailyChange, totalGain });
-
-        const marketRes = await axios.get('http://localhost:5000/api/market/top', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setTopGainers(marketRes.data.gainers.slice(0, 3));
-        setTopLosers(marketRes.data.losers.slice(0, 3));
+        const [portfolioRes, marketRes] = await Promise.all([
+          axios.get('http://localhost:5000/api/portfolios/user/1', {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get('http://localhost:5000/api/market/top', {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+        setPortfolio(portfolioRes.data);
+        setTopGainers(marketRes.data.gainers);
+        setTopLosers(marketRes.data.losers);
+        setError('');
       } catch (err) {
-        console.error('Error fetching data:', err);
+        setError('Error fetching data');
       }
+      setLoading(false);
     };
     fetchData();
   }, [token]);
 
-  // Configuring chart data for portfolio and stock prices
-  const portfolioData = {
-    labels: ['Yesterday', 'Today'],
-    datasets: [
-      {
-        label: 'Portfolio Value (£)',
-        data: [portfolio.value - portfolio.dailyChange, portfolio.value],
-        borderColor: 'rgba(0, 255, 0, 0.7)',
-        backgroundColor: 'rgba(0, 255, 0, 0.2)',
-        fill: true,
-      },
-    ],
-  };
-
-  const graphOptions = {
-    responsive: true,
-    plugins: { legend: { display: false }, tooltip: { enabled: true } },
-    scales: { x: { display: false }, y: { display: false } },
-  };
-
-  // Rendering the users page with portfolio and market data
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <Head>
-        <title>Aivestor Users</title>
-      </Head>
-      <header className="p-4 bg-gray-800 flex flex-col items-center">
-        <h1 className="text-2xl font-bold mb-4">Aivestor Users</h1>
-        <div className="w-full overflow-x-auto whitespace-nowrap">
-          <div className="inline-block mr-4">
-            <h2 className="text-lg font-semibold text-green-400">Top Gainers</h2>
-            {topGainers.map((stock) => (
-              <div key={stock.ticker} className="flex items-center mb-2">
-                <span className="mr-2">{stock.ticker}</span>
-                <span className="text-green-400">£{stock.price.toFixed(2)} (+{stock.change}%)</span>
-                <PriceGraph
-                  data={{
-                    labels: ['Prev', 'Current'],
-                    datasets: [{ data: [stock.price - (stock.change / 100) * stock.price, stock.price], borderColor: 'green', fill: false }],
-                  }}
-                  options={graphOptions}
-                />
+    <div className="flex min-h-screen bg-gray-950">
+      <Sidebar />
+      <main className="flex-1 p-8 overflow-y-auto">
+        <header className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-white">Portfolio Overview</h1>
+          <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Refresh</button>
+        </header>
+        {loading ? (
+          <div className="animate-pulse space-y-6">
+            <div className="h-32 bg-gray-800 rounded-lg" />
+            <div className="h-16 bg-gray-800 rounded-lg" />
+            <div className="h-16 bg-gray-800 rounded-lg" />
+          </div>
+        ) : error ? (
+          <div className="text-red-400">{error}</div>
+        ) : (
+          <>
+            <section className="mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {portfolio.length === 0 ? (
+                  <div className="col-span-full text-gray-400">No portfolio entries found.</div>
+                ) : (
+                  portfolio.map((stock) => {
+                    const miniData = {
+                      labels: ['Prev', 'Current'],
+                      datasets: [
+                        {
+                          data: [stock.purchase_price, stock.purchase_price + (stock.daily_change || 0) / (stock.quantity || 1)],
+                          borderColor: stock.daily_change >= 0 ? 'green' : 'red',
+                          fill: false,
+                        },
+                      ],
+                    };
+                    return (
+                      <motion.div
+                        key={stock.id}
+                        className="bg-gray-900 p-6 rounded-lg shadow-lg flex flex-col gap-2"
+                        whileHover={{ scale: 1.03 }}
+                        transition={{ type: 'spring', stiffness: 300 }}
+                      >
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="font-bold text-lg">{stock.stock_symbol}</span>
+                          <span className={stock.daily_change >= 0 ? 'text-green-400' : 'text-red-400'}>
+                            {stock.daily_change >= 0 ? '+' : ''}{stock.daily_change?.toFixed(2)} Today
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div>
+                            <div className="text-gray-400 text-xs">Quantity</div>
+                            <div className="font-mono">{stock.quantity}</div>
+                          </div>
+                          <div>
+                            <div className="text-gray-400 text-xs">Purchase Price</div>
+                            <div className="font-mono">£{stock.purchase_price.toFixed(2)}</div>
+                          </div>
+                          <div>
+                            <div className="text-gray-400 text-xs">Total Gain</div>
+                            <div className={stock.total_gain >= 0 ? 'text-green-400' : 'text-red-400'}>
+                              {stock.total_gain >= 0 ? '+' : ''}{stock.total_gain?.toFixed(2)}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="mt-2">
+                          <MiniChart data={miniData} color={stock.daily_change >= 0 ? 'green' : 'red'} />
+                        </div>
+                      </motion.div>
+                    );
+                  })
+                )}
               </div>
-            ))}
-          </div>
-          <div className="inline-block">
-            <h2 className="text-lg font-semibold text-red-400">Top Losers</h2>
-            {topLosers.map((stock) => (
-              <div key={stock.ticker} className="flex items-center mb-2">
-                <span className="mr-2">{stock.ticker}</span>
-                <span className="text-red-400">£{stock.price.toFixed(2)} ({stock.change}%)</span>
-                <PriceGraph
-                  data={{
-                    labels: ['Prev', 'Current'],
-                    datasets: [{ data: [stock.price - (stock.change / 100) * stock.price, stock.price], borderColor: 'red', fill: false }],
-                  }}
-                  options={graphOptions}
-                />
+            </section>
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <div className="bg-gray-900 p-6 rounded-lg shadow-lg">
+                <h2 className="text-lg font-semibold text-green-400 mb-4">Top Gainers</h2>
+                <ul>
+                  {topGainers.map((stock) => (
+                    <li key={stock.ticker} className="flex justify-between items-center mb-2">
+                      <span className="font-semibold">{stock.ticker}</span>
+                      <span className="text-green-400 font-mono">+{stock.change_percent.toFixed(2)}%</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            ))}
-          </div>
-        </div>
-      </header>
-      <div className="p-4">
-        <h2 className="text-xl font-semibold">Portfolio Overview</h2>
-        <div className="bg-gray-800 p-4 rounded-lg mt-2">
-          <div className="text-2xl font-bold">£{portfolio.value.toFixed(2)}</div>
-          <div className={portfolio.dailyChange >= 0 ? 'text-green-400' : 'text-red-400'}>
-            {portfolio.dailyChange >= 0 ? '+' : ''}{portfolio.dailyChange.toFixed(2)} ({((portfolio.dailyChange / portfolio.value) * 100).toFixed(2)}%) Today
-          </div>
-          <div className={portfolio.totalGain >= 0 ? 'text-green-400' : 'text-red-400'}>
-            {portfolio.totalGain >= 0 ? '+' : ''}{portfolio.totalGain.toFixed(2)} Total Gain
-          </div>
-          <PriceGraph data={portfolioData} options={graphOptions} />
-        </div>
-      </div>
+              <div className="bg-gray-900 p-6 rounded-lg shadow-lg">
+                <h2 className="text-lg font-semibold text-red-400 mb-4">Top Losers</h2>
+                <ul>
+                  {topLosers.map((stock) => (
+                    <li key={stock.ticker} className="flex justify-between items-center mb-2">
+                      <span className="font-semibold">{stock.ticker}</span>
+                      <span className="text-red-400 font-mono">{stock.change_percent.toFixed(2)}%</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </section>
+          </>
+        )}
+      </main>
     </div>
   );
 }
