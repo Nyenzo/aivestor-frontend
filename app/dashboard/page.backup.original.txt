@@ -1,0 +1,865 @@
+This is a plaintext backup of the original, corrupted `page.js` before the force-rewrite.
+
+Below is the exact content that existed prior to replacement:
+
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { io } from "socket.io-client";
+import axios from "axios";
+import {
+  Home,
+  Briefcase,
+  BarChart2,
+  Settings,
+  Eye,
+  X,
+          <button onClick={onClose} className="lg:hidden">
+            <X size={24} />
+          </button>
+        </div>
+
+        <nav className="flex flex-col gap-2 flex-1">
+          <NavItem href="/dashboard" icon={<Home size={20} />} label="Dashboard" active />
+          <NavItem href="/users" icon={<Briefcase size={20} />} label="Portfolio" />
+          <NavItem href="/risk-assessment" icon={<BarChart2 size={20} />} label="Risk Assessment" />
+          <NavItem href="/watchlist" icon={<Eye size={20} />} label="Watchlist" />
+          <NavItem href="/settings" icon={<Settings size={20} />} label="Settings" />
+        </nav>
+
+        <div className="mt-auto space-y-4">
+          <div className="bg-gray-800 rounded-lg p-4">
+            <p className="text-xs text-gray-400 mb-2">Quick Tip</p>
+            <p className="text-sm text-gray-300">Diversify your portfolio across sectors for better risk management.</p>
+          </div>
+          <div className="text-xs text-gray-500">© 2025 Aivestor</div>
+        </div>
+      </aside>
+    </>
+  );
+}
+
+export default function Dashboard() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [portfolioPositions, setPortfolioPositions] = useState([]);
+  const [portfolioSummary, setPortfolioSummary] = useState({ value: 0, dailyChange: 0, totalGain: 0 });
+  const [movers, setMovers] = useState({ gainers: [], losers: [] });
+  const [tickerItems, setTickerItems] = useState([]);
+  const [error, setError] = useState("");
+
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : "";
+
+  useEffect(() => {
+    const socket = io(API_URL, { transports: ["websocket"] });
+    socket.on("price_update", () => {});
+    return () => socket.disconnect();
+  }, []);
+
+  const authHeaders = useMemo(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token]);
+
+  async function loadData() {
+    try {
+      setError("");
+      const [portfolioRes, topRes] = await Promise.all([
+        axios.get(`${API_URL}/api/portfolios/user/1`, authHeaders),
+        axios.get(`${API_URL}/api/market/top`, authHeaders),
+      ]);
+
+      const positions = portfolioRes.data || [];
+      setPortfolioPositions(positions);
+
+      const summary = positions.reduce(
+        (acc, p) => {
+          const price = p.current_price ?? p.purchase_price ?? 0;
+          acc.value += price * (p.quantity ?? 0);
+          acc.dailyChange += p.daily_change ?? 0;
+          acc.totalGain += p.total_gain ?? 0;
+          return acc;
+        },
+        { value: 0, dailyChange: 0, totalGain: 0 }
+      );
+      setPortfolioSummary(summary);
+
+      const top = topRes.data || { gainers: [], losers: [] };
+      setMovers({ gainers: top.gainers ?? [], losers: top.losers ?? [] });
+
+      const tape = [...(top.gainers || []), ...(top.losers || [])].map((s) => ({
+        symbol: s.ticker,
+        price: s.price ?? 0,
+        changePct: s.change ?? 0,
+      }));
+      setTickerItems(tape);
+    } catch (e) {
+      console.error(e);
+      setError("Unable to load data. Ensure backend (5000) and AI service (5001) are running.");
+      // Fallback demo data
+      setPortfolioPositions([
+        { stock_symbol: "NFLX", company_name: "Netflix, Inc.", quantity: 10, purchase_price: 500, current_price: 510, daily_change: 100, total_gain: 1000 },
+        { stock_symbol: "AAPL", company_name: "Apple Inc.", quantity: 20, purchase_price: 170, current_price: 172, daily_change: 40, total_gain: 500 },
+        { stock_symbol: "INTC", company_name: "Intel", quantity: 30, purchase_price: 30, current_price: 29, daily_change: -30, total_gain: -50 },
+      ]);
+      setPortfolioSummary({ value: 29366912.72, dailyChange: -566661.62, totalGain: 5316816.92 });
+      setMovers({
+        gainers: [
+          { ticker: "MBG.VI", price: 57.14, change: 1.71 },
+          { ticker: "AAPL", price: 270.04, change: 0.85 },
+          { ticker: "NVDA", price: 120.12, change: 0.65 },
+        ],
+        losers: [
+          { ticker: "INTC", price: 37.03, change: -6.25 },
+          { ticker: "NFLX", price: 1092.96, change: -0.65 },
+          { ticker: "TSLA", price: 210.33, change: -0.42 },
+        ],
+      });
+      setTickerItems([
+        { symbol: "FTSE 100", price: 9722.31, changePct: 0.08 },
+        { symbol: "FTSE 250", price: 22025.06, changePct: 0.13 },
+        { symbol: "AIM", price: 757.0, changePct: -0.34 },
+      ]);
+    }
+  }
+
+  useEffect(() => {
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const formatCurrency = (v) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(v || 0);
+  const pct = (v) => `${v >= 0 ? "+" : ""}${(v || 0).toFixed(2)}%`;
+
+  return (
+    <div className="flex min-h-screen bg-gray-950 text-gray-200">
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <main className="flex-1 flex flex-col overflow-hidden">
+        <TickerTape items={tickerItems} />
+
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-4 sm:p-6 lg:p-8 max-w-[1800px] mx-auto">
+            <header className="flex flex-wrap items-center justify-between gap-4 mb-6">
+              <div className="flex items-center gap-4">
+                <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 hover:bg-gray-800 rounded-lg transition">
+                  <Menu size={22} />
+                </button>
+                <h1 className="text-2xl font-bold">Dashboard</h1>
+              </div>
+
+              <button onClick={loadData} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition">
+                <RefreshCw size={18} /> Refresh
+              </button>
+            </header>
+
+            {error && (
+              <div className="mb-4 rounded border border-yellow-700/40 bg-yellow-900/20 p-3 text-yellow-200">{error}</div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <StatCard title="Portfolio Value" value={formatCurrency(portfolioSummary.value)} delta={pct((portfolioSummary.dailyChange / Math.max(portfolioSummary.value - portfolioSummary.dailyChange, 1)) * 100)} icon={<Briefcase className="text-blue-400" size={18} />} />
+              <StatCard title="Today's Change" value={formatCurrency(portfolioSummary.dailyChange)} delta={pct((portfolioSummary.dailyChange / Math.max(portfolioSummary.value - portfolioSummary.dailyChange, 1)) * 100)} positive={portfolioSummary.dailyChange >= 0} icon={<TrendingUp className="text-green-400" size={18} />} />
+              <StatCard title="Total Gain" value={formatCurrency(portfolioSummary.totalGain)} positive={portfolioSummary.totalGain >= 0} icon={<BarChart2 className="text-purple-400" size={18} />} />
+              <StatCard title="Positions" value={portfolioPositions.length} icon={<Eye className="text-gray-400" size={18} />} />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold">Portfolios & Watchlists</h2>
+                  </div>
+                  <Watchlist positions={portfolioPositions} currencyFormatter={formatCurrency} />
+                </div>
+
+                <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold">Portfolio Performance</h2>
+                  </div>
+                  <PriceChart height={220} />
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <TopMovers gainers={movers.gainers} losers={movers.losers} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+
+                        <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
+
+      const portfolioData = portfolioRes.data;                  <span className="hidden sm:inline">Refresh</span>
+
+      const value = portfolioData.reduce((sum, p) => sum + p.quantity * (p.current_price || p.purchase_price), 0);                </button>
+
+      const dailyChange = portfolioData.reduce((sum, p) => sum + (p.daily_change || 0), 0);                <button className="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition relative">
+
+      const totalGain = portfolioData.reduce((sum, p) => sum + (p.total_gain || 0), 0);                  <Bell size={20} className="text-white" />
+
+                        <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+
+      setPortfolio({ value, dailyChange, totalGain });                </button>
+
+      setPortfolioStocks(portfolioData);              </div>
+
+      setMarket(marketRes.data);            </header>
+
+      setError('');
+
+    } catch (err) {            {loading ? (
+
+      console.error('Error fetching data:', err);              <div className="space-y-6">
+
+      setError('Unable to load portfolio data. Please ensure services are running.');                <div className="h-48 bg-gray-800/50 rounded-xl animate-pulse" />
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+      // Set demo data for development                  {[1, 2, 3].map((i) => (
+
+      setPortfolio({                     <div key={i} className="h-32 bg-gray-800/50 rounded-xl animate-pulse" />
+
+        value: 29366912.72,                   ))}
+
+        dailyChange: -566661.62,                 </div>
+
+        totalGain: 5316816.92               </div>
+
+      });            ) : error ? (
+
+      setPortfolioStocks([              <div className="bg-yellow-900/20 border border-yellow-700/50 rounded-xl p-6 mb-6">
+
+        { id: 1, stock_symbol: 'NFLX', company_name: 'Netflix, Inc.', quantity: 1000, purchase_price: 1092.96, current_price: 1092.96, daily_change: -7099.84, total_gain: -1854.40 },                <div className="flex items-start gap-3">
+
+        { id: 2, stock_symbol: 'MBG.VI', company_name: 'Mercedes-Benz Group', quantity: 500, purchase_price: 57.14, current_price: 57.14, daily_change: 977.90, total_gain: 977.90 },                  <div className="text-yellow-500">⚠️</div>
+
+        { id: 3, stock_symbol: 'INTC', company_name: 'Intel Corporation', quantity: 2000, purchase_price: 37.03, current_price: 37.03, daily_change: -2315.50, total_gain: -140.60 },                  <div>
+
+        { id: 4, stock_symbol: 'AAPL', company_name: 'Apple Inc.', quantity: 1500, purchase_price: 270.04, current_price: 275.12, daily_change: 7620.00, total_gain: 12345.00 },                    <h3 className="text-yellow-500 font-semibold mb-1">Demo Mode</h3>
+
+      ]);                    <p className="text-gray-300 text-sm">{error}</p>
+
+      setMarket({ gainers: [                    <p className="text-gray-400 text-xs mt-2">Showing demo data for UI preview.</p>
+
+        { ticker: 'TSLA', price: 245.32, change: 5.67 },                  </div>
+
+        { ticker: 'NVDA', price: 892.11, change: 4.23 },                </div>
+
+        { ticker: 'AMD', price: 142.88, change: 3.91 },              </div>
+
+      ], losers: [            ) : null}
+
+        { ticker: 'META', price: 475.23, change: -2.34 },
+
+        { ticker: 'GOOGL', price: 142.11, change: -1.87 },            {/* Portfolio Summary Card */}
+
+        { ticker: 'AMZN', price: 178.45, change: -1.23 },            <motion.div
+
+      ]});              initial={{ opacity: 0, y: 20 }}
+
+    }              animate={{ opacity: 1, y: 0 }}
+
+    setLoading(false);              className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 sm:p-8 mb-6 border border-gray-700/50 shadow-2xl"
+
+    setTimeout(() => setRefreshing(false), 500);            >
+
+  };              <div className="flex items-start justify-between mb-6">
+
+                <div>
+
+  useEffect(() => {                  <div className="flex items-center gap-3 mb-2">
+
+    fetchData();                    <h2 className="text-gray-400 text-sm font-medium uppercase tracking-wider">Portfolio Performance</h2>
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps                    <button
+
+  }, []);                      onClick={() => setHideBalance(!hideBalance)}
+
+                      className="p-1.5 hover:bg-gray-700 rounded-lg transition"
+
+  const formatCurrency = (value) => {                    >
+
+    return new Intl.NumberFormat('en-US', {                      {hideBalance ? <EyeOff size={18} className="text-gray-400" /> : <Eye size={18} className="text-gray-400" />}
+
+      style: 'currency',                    </button>
+
+      currency: 'USD',                  </div>
+
+      minimumFractionDigits: 2,                  <div className="text-4xl sm:text-5xl font-bold text-white mb-3">
+
+      maximumFractionDigits: 2                    {hideBalance ? '••••••••' : formatCurrency(portfolio?.value || 0)}
+
+    }).format(value);                  </div>
+
+  };                  <div className="flex flex-wrap items-center gap-4">
+
+                    <div className={`flex items-center gap-2 text-lg font-semibold ${
+
+  const formatPercentage = (value) => {                      (portfolio?.dailyChange || 0) >= 0 ? 'text-green-400' : 'text-red-400'
+
+    const sign = value >= 0 ? '+' : '';                    }`}>
+
+    return `${sign}${value.toFixed(2)}%`;                      {(portfolio?.dailyChange || 0) >= 0 ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
+
+  };                      {hideBalance ? '••••' : formatCurrency(Math.abs(portfolio?.dailyChange || 0))}
+
+                      <span className="text-base">
+
+  return (                        ({formatPercentage(((portfolio?.dailyChange || 0) / (portfolio?.value || 1)) * 100)})
+
+    <div className="flex min-h-screen bg-gray-950">                      </span>
+
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />                      <span className="text-sm text-gray-400 font-normal">Today</span>
+
+                          </div>
+
+      <main className="flex-1 flex flex-col overflow-hidden">                    <div className="h-6 w-px bg-gray-700"></div>
+
+        {/* Market Ticker */}                    <div className={`text-lg font-semibold ${
+
+        <MarketTicker markets={market?.tickers || []} />                      (portfolio?.totalGain || 0) >= 0 ? 'text-green-400' : 'text-red-400'
+
+                    }`}>
+
+        {/* Main Content */}                      {hideBalance ? '••••' : formatCurrency(portfolio?.totalGain || 0)}
+
+        <div className="flex-1 overflow-y-auto">                      <span className="text-sm text-gray-400 font-normal ml-2">
+
+          <div className="p-4 sm:p-6 lg:p-8 max-w-[1800px] mx-auto">                        ({formatPercentage(((portfolio?.totalGain || 0) / ((portfolio?.value || 1) - (portfolio?.totalGain || 0))) * 100)})
+
+            {/* Header */}                      </span>
+
+            <header className="flex flex-wrap items-center justify-between gap-4 mb-6">                      <span className="text-sm text-gray-400 font-normal ml-2">Past 5 years</span>
+
+              <div className="flex items-center gap-4">                    </div>
+
+                <button                  </div>
+
+                  onClick={() => setSidebarOpen(true)}                </div>
+
+                  className="lg:hidden p-2 hover:bg-gray-800 rounded-lg transition"                <div className="hidden sm:flex flex-col gap-2">
+
+                >                  <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition font-medium">
+
+                  <Menu className="text-white" size={24} />                    <Plus size={18} />
+
+                </button>                    Add Stock
+
+                <div>                  </button>
+
+                  <h1 className="text-2xl sm:text-3xl font-bold text-white">Dashboard</h1>                  <button className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition font-medium">
+
+                  <p className="text-gray-400 text-sm mt-1">Welcome back! Here&apos;s your portfolio overview</p>                    <Search size={18} />
+
+                </div>                    Search
+
+              </div>                  </button>
+
+              <div className="flex items-center gap-3">                </div>
+
+                <button              </div>
+
+                  onClick={fetchData}
+
+                  disabled={refreshing}              {/* Portfolio Chart */}
+
+                  className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition disabled:opacity-50"              <PortfolioChart />
+
+                >            </motion.div>
+
+                  <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
+
+                  <span className="hidden sm:inline">Refresh</span>            {/* Quick Stats */}
+
+                </button>            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+                <button className="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition relative">              <StatsCard
+
+                  <Bell size={20} className="text-white" />                icon={<DollarSign size={24} />}
+
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>                label="Total Invested"
+
+                </button>                value={formatCurrency((portfolio?.value || 0) - (portfolio?.totalGain || 0))}
+
+              </div>                color="blue"
+
+            </header>              />
+
+              <StatsCard
+
+            {loading ? (                icon={<TrendingUp size={24} />}
+
+              <div className="space-y-6">                label="Total Return"
+
+                <div className="h-48 bg-gray-800/50 rounded-xl animate-pulse" />                value={formatCurrency(portfolio?.totalGain || 0)}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">                percentage={formatPercentage(((portfolio?.totalGain || 0) / ((portfolio?.value || 1) - (portfolio?.totalGain || 0))) * 100)}
+
+                  {[1, 2, 3].map((i) => (                color="green"
+
+                    <div key={i} className="h-32 bg-gray-800/50 rounded-xl animate-pulse" />              />
+
+                  ))}              <StatsCard
+
+                </div>                icon={<Target size={24} />}
+
+              </div>                label="Day's Gain/Loss"
+
+            ) : error ? (                value={formatCurrency(portfolio?.dailyChange || 0)}
+
+              <>                percentage={formatPercentage(((portfolio?.dailyChange || 0) / (portfolio?.value || 1)) * 100)}
+
+                <div className="bg-yellow-900/20 border border-yellow-700/50 rounded-xl p-6 mb-6">                color={(portfolio?.dailyChange || 0) >= 0 ? 'green' : 'red'}
+
+                  <div className="flex items-start gap-3">              />
+
+                    <div className="text-yellow-500">⚠️</div>              <StatsCard
+
+                    <div>                icon={<Clock size={24} />}
+
+                      <h3 className="text-yellow-500 font-semibold mb-1">Demo Mode</h3>                label="Holdings"
+
+                      <p className="text-gray-300 text-sm">{error}</p>                value={portfolioStocks.length.toString()}
+
+                      <p className="text-gray-400 text-xs mt-2">Showing demo data for UI preview.</p>                subtitle="Active stocks"
+
+                    </div>                color="purple"
+
+                  </div>              />
+
+                </div>            </div>
+
+                {renderDashboardContent()}
+
+              </>            {/* Main Content Grid */}
+
+            ) : renderDashboardContent()}            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+
+          </div>              {/* Portfolio Holdings */}
+
+        </div>              <div className="lg:col-span-2 space-y-6">
+
+      </main>                <div className="flex items-center justify-between mb-4">
+
+    </div>                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
+
+  );                    <Briefcase size={24} />
+
+                    Portfolio Holdings
+
+  function renderDashboardContent() {                  </h2>
+
+    return (                  <button className="text-sm text-gray-400 hover:text-white flex items-center gap-1">
+
+      <>                    <Filter size={16} />
+
+        {/* Portfolio Summary Card */}                    Sort
+
+        <motion.div                  </button>
+
+          initial={{ opacity: 0, y: 20 }}                </div>
+
+          animate={{ opacity: 1, y: 0 }}                
+
+          className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 sm:p-8 mb-6 border border-gray-700/50 shadow-2xl"                <div className="grid grid-cols-1 gap-4">
+
+        >                  {portfolioStocks.map((stock) => (
+
+          <div className="flex items-start justify-between mb-6">                    <StockItem
+
+            <div>                      key={stock.id}
+
+              <div className="flex items-center gap-3 mb-2">                      symbol={stock.stock_symbol}
+
+                <h2 className="text-gray-400 text-sm font-medium uppercase tracking-wider">Portfolio Performance</h2>                      name={stock.company_name || stock.stock_symbol}
+
+                <button                      price={stock.current_price || stock.purchase_price}
+
+                  onClick={() => setHideBalance(!hideBalance)}                      change={stock.daily_change || 0}
+
+                  className="p-1.5 hover:bg-gray-700 rounded-lg transition"                      changePercent={((stock.daily_change || 0) / (stock.current_price || stock.purchase_price)) * 100}
+
+                >                      shares={stock.quantity}
+
+                  {hideBalance ? <EyeOff size={18} className="text-gray-400" /> : <Eye size={18} className="text-gray-400" />}                      totalValue={stock.quantity * (stock.current_price || stock.purchase_price)}
+
+                </button>                      showValue={!hideBalance}
+
+              </div>                    />
+
+              <div className="text-4xl sm:text-5xl font-bold text-white mb-3">                  ))}
+
+                {hideBalance ? '••••••••' : formatCurrency(portfolio?.value || 0)}                </div>
+
+              </div>
+
+              <div className="flex flex-wrap items-center gap-4">                {portfolioStocks.length === 0 && (
+
+                <div className={`flex items-center gap-2 text-lg font-semibold ${                  <div className="text-center py-12 bg-gray-800/50 rounded-xl border border-gray-700/50">
+
+                  (portfolio?.dailyChange || 0) >= 0 ? 'text-green-400' : 'text-red-400'                    <Briefcase size={48} className="mx-auto text-gray-600 mb-4" />
+
+                }`}>                    <h3 className="text-white font-semibold mb-2">No holdings yet</h3>
+
+                  {(portfolio?.dailyChange || 0) >= 0 ? <TrendingUp size={20} /> : <TrendingDown size={20} />}                    <p className="text-gray-400 text-sm mb-4">Start building your portfolio by adding stocks</p>
+
+                  {hideBalance ? '••••' : formatCurrency(Math.abs(portfolio?.dailyChange || 0))}                    <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition">
+
+                  <span className="text-base">                      Add Your First Stock
+
+                    ({formatPercentage(((portfolio?.dailyChange || 0) / (portfolio?.value || 1)) * 100)})                    </button>
+
+                  </span>                  </div>
+
+                  <span className="text-sm text-gray-400 font-normal">Today</span>                )}
+
+                </div>              </div>
+
+                <div className="h-6 w-px bg-gray-700"></div>
+
+                <div className={`text-lg font-semibold ${              {/* Sidebar Content */}
+
+                  (portfolio?.totalGain || 0) >= 0 ? 'text-green-400' : 'text-red-400'              <div className="space-y-6">
+
+                }`}>                {/* Market Movers */}
+
+                  {hideBalance ? '••••' : formatCurrency(portfolio?.totalGain || 0)}                <motion.div
+
+                  <span className="text-sm text-gray-400 font-normal ml-2">                  initial={{ opacity: 0, x: 20 }}
+
+                    ({formatPercentage(((portfolio?.totalGain || 0) / ((portfolio?.value || 1) - (portfolio?.totalGain || 0))) * 100)})                  animate={{ opacity: 1, x: 0 }}
+
+                  </span>                  className="bg-gray-800/50 rounded-xl p-5 border border-gray-700/50"
+
+                  <span className="text-sm text-gray-400 font-normal ml-2">Past 5 years</span>                >
+
+                </div>                  <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+
+              </div>                    <TrendingUp size={20} className="text-green-400" />
+
+            </div>                    Top Gainers
+
+            <div className="hidden sm:flex flex-col gap-2">                  </h3>
+
+              <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition font-medium">                  <div className="space-y-3">
+
+                <Plus size={18} />                    {(market?.gainers || []).slice(0, 3).map((stock, idx) => (
+
+                Add Stock                      <MarketMoverItem key={idx} stock={stock} isGainer />
+
+              </button>                    ))}
+
+              <button className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition font-medium">                  </div>
+
+                <Search size={18} />                </motion.div>
+
+                Search
+
+              </button>                <motion.div
+
+            </div>                  initial={{ opacity: 0, x: 20 }}
+
+          </div>                  animate={{ opacity: 1, x: 0 }}
+
+                  transition={{ delay: 0.1 }}
+
+          {/* Portfolio Chart */}                  className="bg-gray-800/50 rounded-xl p-5 border border-gray-700/50"
+
+          <PortfolioChart />                >
+
+        </motion.div>                  <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+
+                    <TrendingDown size={20} className="text-red-400" />
+
+        {/* Quick Stats */}                    Top Losers
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">                  </h3>
+
+          <StatsCard                  <div className="space-y-3">
+
+            icon={<DollarSign size={24} />}                    {(market?.losers || []).slice(0, 3).map((stock, idx) => (
+
+            label="Total Invested"                      <MarketMoverItem key={idx} stock={stock} isGainer={false} />
+
+            value={formatCurrency((portfolio?.value || 0) - (portfolio?.totalGain || 0))}                    ))}
+
+            color="blue"                  </div>
+
+          />                </motion.div>
+
+          <StatsCard
+
+            icon={<TrendingUp size={24} />}                {/* AI Insights/Nudges */}
+
+            label="Total Return"                <motion.div
+
+            value={formatCurrency(portfolio?.totalGain || 0)}                  initial={{ opacity: 0, x: 20 }}
+
+            percentage={formatPercentage(((portfolio?.totalGain || 0) / ((portfolio?.value || 1) - (portfolio?.totalGain || 0))) * 100)}                  animate={{ opacity: 1, x: 0 }}
+
+            color="green"                  transition={{ delay: 0.2 }}
+
+          />                  className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 rounded-xl p-5 border border-purple-700/30"
+
+          <StatsCard                >
+
+            icon={<Target size={24} />}                  <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+
+            label="Day&apos;s Gain/Loss"                    <Bell size={20} className="text-purple-400" />
+
+            value={formatCurrency(portfolio?.dailyChange || 0)}                    AI Insights
+
+            percentage={formatPercentage(((portfolio?.dailyChange || 0) / (portfolio?.value || 1)) * 100)}                  </h3>
+
+            color={(portfolio?.dailyChange || 0) >= 0 ? 'green' : 'red'}                  <AnimatePresence>
+
+          />                    {nudges.length === 0 ? (
+
+          <StatsCard                      <div className="space-y-3">
+
+            icon={<Clock size={24} />}                        <InsightCard
+
+            label="Holdings"                          title="Portfolio Diversification"
+
+            value={portfolioStocks.length.toString()}                          message="Consider adding more tech stocks to balance your portfolio"
+
+            subtitle="Active stocks"                          type="tip"
+
+            color="purple"                        />
+
+          />                        <InsightCard
+
+        </div>                          title="Market Opportunity"
+
+                          message="AAPL shows strong buy signals based on technical analysis"
+
+        {/* Main Content Grid */}                          type="opportunity"
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">                        />
+
+          {/* Portfolio Holdings */}                      </div>
+
+          <div className="lg:col-span-2 space-y-6">                    ) : (
+
+            <div className="flex items-center justify-between mb-4">                      nudges.map((nudge, idx) => (
+
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">                        <motion.div
+
+                <Briefcase size={24} />                          key={idx}
+
+                Portfolio Holdings                          initial={{ opacity: 0, y: 10 }}
+
+              </h2>                          animate={{ opacity: 1, y: 0 }}
+
+              <button className="text-sm text-gray-400 hover:text-white flex items-center gap-1">                          exit={{ opacity: 0, y: -10 }}
+
+                <Filter size={16} />                          className="bg-gray-800/50 p-3 rounded-lg mb-2"
+
+                Sort                        >
+
+              </button>                          <p className="text-gray-300 text-sm">{nudge.message}</p>
+
+            </div>                        </motion.div>
+
+                                  ))
+
+            <div className="grid grid-cols-1 gap-4">                    )}
+
+              {portfolioStocks.map((stock) => (                  </AnimatePresence>
+
+                <StockItem                </motion.div>
+
+                  key={stock.id}              </div>
+
+                  symbol={stock.stock_symbol}            </div>
+
+                  name={stock.company_name || stock.stock_symbol}          </div>
+
+                  price={stock.current_price || stock.purchase_price}        </div>
+
+                  change={stock.daily_change || 0}      </main>
+
+                  changePercent={((stock.daily_change || 0) / (stock.current_price || stock.purchase_price)) * 100}    </div>
+
+                  shares={stock.quantity}  );
+
+                  totalValue={stock.quantity * (stock.current_price || stock.purchase_price)}}
+
+                  showValue={!hideBalance}
+
+                />// Helper Components
+
+              ))}const StatsCard = ({ icon, label, value, percentage, subtitle, color }) => {
+
+            </div>  const colorClasses = {
+
+    blue: 'from-blue-600/20 to-blue-800/20 border-blue-700/30',
+
+            {portfolioStocks.length === 0 && (    green: 'from-green-600/20 to-green-800/20 border-green-700/30',
+
+              <div className="text-center py-12 bg-gray-800/50 rounded-xl border border-gray-700/50">    red: 'from-red-600/20 to-red-800/20 border-red-700/30',
+
+                <Briefcase size={48} className="mx-auto text-gray-600 mb-4" />    purple: 'from-purple-600/20 to-purple-800/20 border-purple-700/30',
+
+                <h3 className="text-white font-semibold mb-2">No holdings yet</h3>  };
+
+                <p className="text-gray-400 text-sm mb-4">Start building your portfolio by adding stocks</p>
+
+                <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition">  const iconColorClasses = {
+
+                  Add Your First Stock    blue: 'text-blue-400',
+
+                </button>    green: 'text-green-400',
+
+              </div>    red: 'text-red-400',
+
+            )}    purple: 'text-purple-400',
+
+          </div>  };
+
+
+
+          {/* Sidebar Content */}  return (
+
+          <div className="space-y-6">    <motion.div
+
+            {/* Market Movers */}      initial={{ opacity: 0, scale: 0.95 }}
+
+            <motion.div      animate={{ opacity: 1, scale: 1 }}
+
+              initial={{ opacity: 0, x: 20 }}      className={`bg-gradient-to-br ${colorClasses[color]} rounded-xl p-4 border`}
+
+              animate={{ opacity: 1, x: 0 }}    >
+
+              className="bg-gray-800/50 rounded-xl p-5 border border-gray-700/50"      <div className={`${iconColorClasses[color]} mb-2`}>{icon}</div>
+
+            >      <div className="text-gray-400 text-xs font-medium mb-1">{label}</div>
+
+              <h3 className="text-white font-semibold mb-4 flex items-center gap-2">      <div className="text-white text-xl font-bold mb-1">{value}</div>
+
+                <TrendingUp size={20} className="text-green-400" />      {percentage && (
+
+                Top Gainers        <div className={`text-sm font-medium ${color === 'red' ? 'text-red-400' : 'text-green-400'}`}>
+
+              </h3>          {percentage}
+
+              <div className="space-y-3">        </div>
+
+                {(market?.gainers || []).slice(0, 3).map((stock, idx) => (      )}
+
+                  <MarketMoverItem key={idx} stock={stock} isGainer />      {subtitle && <div className="text-gray-400 text-xs">{subtitle}</div>}
+
+                ))}    </motion.div>
+
+              </div>  );
+
+            </motion.div>};
+
+
+
+            <motion.divconst MarketMoverItem = ({ stock, isGainer }) => (
+
+              initial={{ opacity: 0, x: 20 }}  <div className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg hover:bg-gray-900/70 transition">
+
+              animate={{ opacity: 1, x: 0 }}    <div>
+
+              transition={{ delay: 0.1 }}      <div className="text-white font-semibold">{stock.ticker}</div>
+
+              className="bg-gray-800/50 rounded-xl p-5 border border-gray-700/50"      <div className="text-gray-400 text-xs">${stock.price?.toFixed(2) || '0.00'}</div>
+
+            >    </div>
+
+              <h3 className="text-white font-semibold mb-4 flex items-center gap-2">    <div className="text-right">
+
+                <TrendingDown size={20} className="text-red-400" />      <div className={`font-semibold ${isGainer ? 'text-green-400' : 'text-red-400'}`}>
+
+                Top Losers        {isGainer ? '+' : ''}{stock.change?.toFixed(2) || stock.changePercent?.toFixed(2) || '0.00'}%
+
+              </h3>      </div>
+
+              <div className="space-y-3">      <MiniChart data={[]} isPositive={isGainer} className="w-16 h-8" />
+
+                {(market?.losers || []).slice(0, 3).map((stock, idx) => (    </div>
+
+                  <MarketMoverItem key={idx} stock={stock} isGainer={false} />  </div>
+
+                ))});
+
+              </div>
+
+            </motion.div>const InsightCard = ({ title, message, type }) => {
+
+  const typeStyles = {
+
+            {/* AI Insights/Nudges */}    tip: 'bg-blue-900/20 border-blue-700/30',
+
+            <motion.div    opportunity: 'bg-green-900/20 border-green-700/30',
+
+              initial={{ opacity: 0, x: 20 }}    warning: 'bg-yellow-900/20 border-yellow-700/30',
+
+              animate={{ opacity: 1, x: 0 }}  };
+
+              transition={{ delay: 0.2 }}
+
+              className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 rounded-xl p-5 border border-purple-700/30"  const typeIcons = {
+
+            >    tip: '💡',
+
+              <h3 className="text-white font-semibold mb-4 flex items-center gap-2">    opportunity: '🎯',
+
+                <Bell size={20} className="text-purple-400" />    warning: '⚠️',
+
+                AI Insights  };
+
+              </h3>
+
+              <AnimatePresence>  return (
+
+                {nudges.length === 0 ? (    <div className={`${typeStyles[type]} border rounded-lg p-3 mb-2`}>
+
+                  <div className="space-y-3">      <div className="flex items-start gap-2">
+
+                    <InsightCard        <span className="text-lg">{typeIcons[type]}</span>
+
+                      title="Portfolio Diversification"        <div>
+
+                      message="Consider adding more tech stocks to balance your portfolio"          <h4 className="text-white font-medium text-sm mb-1">{title}</h4>
+
+                      type="tip"          <p className="text-gray-400 text-xs">{message}</p>
+
+                    />        </div>
+
+                    <InsightCard      </div>
+
+                      title="Market Opportunity"    </div>
+
+                      message="AAPL shows strong buy signals based on technical analysis"  );
+
+                      type="opportunity"};
+
+                    />}
+                  </div>
+                ) : (
+                  nudges.map((nudge, idx) => (
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="bg-gray-800/50 p-3 rounded-lg mb-2"
+                    >
+                      <p className="text-gray-300 text-sm">{nudge.message}</p>
+                    </motion.div>
+                  ))
+                )}
+              </AnimatePresence>
+            </motion.div>
+          </div>
+        </div>
+      </>
+    );
+  }
+}
+
+*/
