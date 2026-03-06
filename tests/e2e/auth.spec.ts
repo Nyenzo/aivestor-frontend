@@ -1,11 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
 
-/**
- * Authentication E2E Tests
- * Tests user registration, login, logout, password reset flows
- * Runs across all configured browsers and devices
- */
-
 // Helper to check if we're on mobile
 const isMobile = (page: Page) => page.viewportSize()?.width! < 768;
 

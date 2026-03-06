@@ -1,10 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
 
-/**
- * Trading E2E Tests
- * Tests stock buying, selling, and transaction flows
- */
-
 async function setupAuthSession(page: Page) {
   await page.goto('/');
   await page.evaluate(() => {

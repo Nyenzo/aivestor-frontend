@@ -1,10 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
 
-/**
- * Responsive Design & Cross-Browser E2E Tests
- * Tests application behavior across different viewport sizes and devices
- */
-
 async function setupAuthSession(page: Page) {
   await page.goto('/');
   await page.evaluate(() => {

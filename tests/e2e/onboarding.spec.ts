@@ -1,10 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
 
-/**
- * Onboarding Flow E2E Tests
- * Tests new user onboarding and risk assessment
- */
-
 async function setupNewUser(page: Page) {
   await page.goto('/');
   await page.evaluate(() => {

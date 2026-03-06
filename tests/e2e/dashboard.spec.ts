@@ -1,10 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
 
-/**
- * Dashboard and Portfolio E2E Tests
- * Tests portfolio viewing, stock data display, and dashboard functionality
- */
-
 // Helper function to set up authenticated session
 async function setupAuthSession(page: Page) {
   await page.goto('/');
