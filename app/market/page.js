@@ -3,12 +3,12 @@ import StitchFrame from "../components/StitchFrame";
 export const dynamic = "force-static";
 export const revalidate = 300;
 export const fetchCache = "force-cache";
-export default function UsersPage() {
+export default function MarketPage() {
   return (
     <StitchFrame
       protectedRoute
-      title="Aivestor Users"
-      src="/stitch/account-settings-light.html"
+      title="Aivestor Market Analytics"
+      src="/stitch/market-analytics-light.html"
     />
   );
 }

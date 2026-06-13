@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /register
+
+Disallow: /dashboard
+Disallow: /portfolio
+Disallow: /brokerage
+Disallow: /chat
+Disallow: /settings
+Disallow: /onboarding
+Disallow: /users
+
+Sitemap: https://aivestor.app/sitemap.xml

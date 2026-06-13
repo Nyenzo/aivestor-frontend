@@ -1,14 +1,8 @@
-/**
- * Form Validation Schemas using Zod
- * 
- * Provides reusable validation schemas for all forms in the application.
- */
+
 
 import { z } from 'zod';
 
-// ============================================================================
 // AUTHENTICATION SCHEMAS
-// ============================================================================
 
 export const loginSchema = z.object({
   email: z
@@ -22,11 +16,6 @@ export const loginSchema = z.object({
 });
 
 export const registerSchema = z.object({
-  displayName: z
-    .string()
-    .min(1, 'Name is required')
-    .min(2, 'Name must be at least 2 characters')
-    .max(50, 'Name must be less than 50 characters'),
   email: z
     .string()
     .min(1, 'Email is required')
@@ -69,9 +58,7 @@ export const resetPasswordSchema = z.object({
   path: ['confirmPassword']
 });
 
-// ============================================================================
 // PROFILE SCHEMAS
-// ============================================================================
 
 export const profileSchema = z.object({
   displayName: z
@@ -113,33 +100,18 @@ export const changePasswordSchema = z.object({
   path: ['newPassword']
 });
 
-// ============================================================================
 // ONBOARDING SCHEMA
-// ============================================================================
 
 export const onboardingSchema = z.object({
   risk_level: z.enum(['low', 'medium', 'high'], {
     errorMap: () => ({ message: 'Please select your risk tolerance' })
   }),
-  investment_experience: z.enum(['beginner', 'intermediate', 'advanced'], {
-    errorMap: () => ({ message: 'Please select your investment experience' })
-  }).optional(),
-  investment_goals: z
-    .array(z.string())
-    .min(1, 'Please select at least one investment goal')
-    .optional(),
-  initial_investment: z
-    .number()
-    .min(0, 'Investment amount cannot be negative')
-    .optional(),
-  tickers: z
-    .array(z.string())
-    .min(1, 'Please select at least one stock')
+  drawdown: z.string().min(1, 'Please select an option'),
+  time_horizon: z.string().min(1, 'Please select an option'),
+  volatility_comfort: z.string().min(1, 'Please select an option')
 });
 
-// ============================================================================
 // TRADING SCHEMAS
-// ============================================================================
 
 export const buyStockSchema = z.object({
   symbol: z
@@ -171,9 +143,7 @@ export const sellStockSchema = z.object({
     .min(0.01, 'Price must be greater than 0')
 });
 
-// ============================================================================
 // WATCHLIST SCHEMA
-// ============================================================================
 
 export const addToWatchlistSchema = z.object({
   symbol: z
@@ -187,9 +157,7 @@ export const addToWatchlistSchema = z.object({
     .optional()
 });
 
-// ============================================================================
 // CHAT SCHEMA
-// ============================================================================
 
 export const chatMessageSchema = z.object({
   message: z
@@ -198,13 +166,8 @@ export const chatMessageSchema = z.object({
     .max(1000, 'Message is too long (max 1000 characters)')
 });
 
-// ============================================================================
 // UTILITY FUNCTIONS
-// ============================================================================
 
-/**
- * Validate data against a schema and return formatted errors
- */
 export function validateSchema(schema, data) {
   try {
     schema.parse(data);
@@ -219,35 +182,29 @@ export function validateSchema(schema, data) {
   }
 }
 
-/**
- * Get password strength score (0-4)
- */
 export function getPasswordStrength(password) {
   let score = 0;
-  
+
   if (!password) return score;
-  
+
   // Length check
   if (password.length >= 8) score++;
   if (password.length >= 12) score++;
-  
+
   // Character variety checks
   if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
   if (/[0-9]/.test(password)) score++;
   if (/[^A-Za-z0-9]/.test(password)) score++;
-  
+
   return Math.min(score, 4);
 }
 
-/**
- * Get password strength label and color
- */
 export function getPasswordStrengthInfo(password) {
   const strength = getPasswordStrength(password);
-  
+
   const labels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
   const colors = ['red', 'orange', 'yellow', 'lime', 'green'];
-  
+
   return {
     strength,
     label: labels[strength],
@@ -261,24 +218,24 @@ export default {
   registerSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
-  
+
   // Profile
   profileSchema,
   changePasswordSchema,
-  
+
   // Onboarding
   onboardingSchema,
-  
+
   // Trading
   buyStockSchema,
   sellStockSchema,
-  
+
   // Watchlist
   addToWatchlistSchema,
-  
+
   // Chat
   chatMessageSchema,
-  
+
   // Utilities
   validateSchema,
   getPasswordStrength,
