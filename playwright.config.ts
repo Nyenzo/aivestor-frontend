@@ -1,5 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const systemChrome = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+  ? { launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH } }
+  : {};
+
 export default defineConfig({
   testDir: './tests/e2e',
   timeout: 60 * 1000,
@@ -16,7 +20,7 @@ export default defineConfig({
     baseURL: process.env.BASE_URL || 'http://localhost:3000',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    video: process.env.PLAYWRIGHT_DISABLE_VIDEO === '1' ? 'off' : 'retain-on-failure',
     actionTimeout: 10 * 1000,
   },
   webServer: process.env.PW_E2E === '1' ? {
@@ -33,7 +37,8 @@ export default defineConfig({
       name: 'chromium-desktop',
       use: { 
         ...devices['Desktop Chrome'],
-        viewport: { width: 1920, height: 1080 }
+        viewport: { width: 1920, height: 1080 },
+        ...systemChrome,
       },
     },
     {

@@ -14,7 +14,7 @@ export default function SessionMonitor() {
 
   useEffect(() => {
     // Skip monitoring on public pages
-    if (PUBLIC_PAGES.some(page => pathname.startsWith(page))) {
+    if (pathname === "/" || PUBLIC_PAGES.some(page => pathname.startsWith(page))) {
       return;
     }
 

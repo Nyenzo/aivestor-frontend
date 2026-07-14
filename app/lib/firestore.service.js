@@ -1,9 +1,4 @@
-/**
- * Firestore Service Layer
- * 
- * Provides type-safe CRUD operations and real-time listeners for all Firestore collections.
- * Handles error management, data validation, and query optimization.
- */
+
 
 import {
   collection,
@@ -27,13 +22,8 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 
-// ============================================================================
 // USERS COLLECTION
-// ============================================================================
 
-/**
- * Get user profile by ID
- */
 export async function getUserProfile(userId) {
   try {
     const userRef = doc(db, 'users', userId);
@@ -49,9 +39,6 @@ export async function getUserProfile(userId) {
   }
 }
 
-/**
- * Create or update user profile
- */
 export async function setUserProfile(userId, data) {
   try {
     const userRef = doc(db, 'users', userId);
@@ -74,9 +61,6 @@ export async function setUserProfile(userId, data) {
   }
 }
 
-/**
- * Update user profile fields
- */
 export async function updateUserProfile(userId, updates) {
   try {
     const userRef = doc(db, 'users', userId);
@@ -91,9 +75,6 @@ export async function updateUserProfile(userId, updates) {
   }
 }
 
-/**
- * Listen to user profile changes in real-time
- */
 export function subscribeToUserProfile(userId, callback, errorCallback) {
   const userRef = doc(db, 'users', userId);
 
@@ -113,13 +94,8 @@ export function subscribeToUserProfile(userId, callback, errorCallback) {
   );
 }
 
-// ============================================================================
 // PORTFOLIOS COLLECTION
-// ============================================================================
 
-/**
- * Get user's portfolio
- */
 export async function getUserPortfolio(userId) {
   try {
     const portfolioRef = doc(db, 'portfolios', userId);
@@ -135,9 +111,6 @@ export async function getUserPortfolio(userId) {
   }
 }
 
-/**
- * Create or update user's portfolio
- */
 export async function setUserPortfolio(userId, portfolioData) {
   try {
     const portfolioRef = doc(db, 'portfolios', userId);
@@ -160,9 +133,6 @@ export async function setUserPortfolio(userId, portfolioData) {
   }
 }
 
-/**
- * Add position to portfolio
- */
 export async function addPosition(userId, position) {
   try {
     const portfolioRef = doc(db, 'portfolios', userId);
@@ -177,9 +147,6 @@ export async function addPosition(userId, position) {
   }
 }
 
-/**
- * Remove position from portfolio
- */
 export async function removePosition(userId, symbolToRemove) {
   try {
     const portfolio = await getUserPortfolio(userId);
@@ -201,9 +168,6 @@ export async function removePosition(userId, symbolToRemove) {
   }
 }
 
-/**
- * Update position in portfolio
- */
 export async function updatePosition(userId, symbol, updates) {
   try {
     const portfolio = await getUserPortfolio(userId);
@@ -225,9 +189,6 @@ export async function updatePosition(userId, symbol, updates) {
   }
 }
 
-/**
- * Listen to portfolio changes in real-time
- */
 export function subscribeToPortfolio(userId, callback, errorCallback) {
   const portfolioRef = doc(db, 'portfolios', userId);
 
@@ -247,13 +208,8 @@ export function subscribeToPortfolio(userId, callback, errorCallback) {
   );
 }
 
-// ============================================================================
 // TRANSACTIONS COLLECTION
-// ============================================================================
 
-/**
- * Add a transaction
- */
 export async function addTransaction(userId, transaction) {
   try {
     const transactionsRef = collection(db, 'transactions');
@@ -274,9 +230,6 @@ export async function addTransaction(userId, transaction) {
   }
 }
 
-/**
- * Get user's transactions with pagination
- */
 export async function getUserTransactions(userId, limitCount = 50) {
   try {
     const transactionsRef = collection(db, 'transactions');
@@ -295,9 +248,6 @@ export async function getUserTransactions(userId, limitCount = 50) {
   }
 }
 
-/**
- * Get transactions for a specific stock
- */
 export async function getStockTransactions(userId, symbol, limitCount = 20) {
   try {
     const transactionsRef = collection(db, 'transactions');
@@ -317,9 +267,6 @@ export async function getStockTransactions(userId, symbol, limitCount = 20) {
   }
 }
 
-/**
- * Listen to transactions in real-time
- */
 export function subscribeToTransactions(userId, callback, errorCallback, limitCount = 50) {
   const transactionsRef = collection(db, 'transactions');
   const q = query(
@@ -342,13 +289,8 @@ export function subscribeToTransactions(userId, callback, errorCallback, limitCo
   );
 }
 
-// ============================================================================
 // WATCHLISTS COLLECTION
-// ============================================================================
 
-/**
- * Get user's watchlist
- */
 export async function getUserWatchlist(userId) {
   try {
     const watchlistRef = doc(db, 'watchlists', userId);
@@ -364,9 +306,6 @@ export async function getUserWatchlist(userId) {
   }
 }
 
-/**
- * Add stock to watchlist
- */
 export async function addToWatchlist(userId, stockData) {
   try {
     const watchlistRef = doc(db, 'watchlists', userId);
@@ -392,9 +331,6 @@ export async function addToWatchlist(userId, stockData) {
   }
 }
 
-/**
- * Remove stock from watchlist
- */
 export async function removeFromWatchlist(userId, symbol) {
   try {
     const watchlist = await getUserWatchlist(userId);
@@ -414,9 +350,6 @@ export async function removeFromWatchlist(userId, symbol) {
   }
 }
 
-/**
- * Listen to watchlist changes in real-time
- */
 export function subscribeToWatchlist(userId, callback, errorCallback) {
   const watchlistRef = doc(db, 'watchlists', userId);
 
@@ -436,13 +369,8 @@ export function subscribeToWatchlist(userId, callback, errorCallback) {
   );
 }
 
-// ============================================================================
 // PREFERENCES COLLECTION
-// ============================================================================
 
-/**
- * Get user preferences
- */
 export async function getUserPreferences(userId) {
   try {
     const prefsRef = doc(db, 'preferences', userId);
@@ -458,9 +386,6 @@ export async function getUserPreferences(userId) {
   }
 }
 
-/**
- * Set user preferences
- */
 export async function setUserPreferences(userId, preferences) {
   try {
     const prefsRef = doc(db, 'preferences', userId);
@@ -483,9 +408,6 @@ export async function setUserPreferences(userId, preferences) {
   }
 }
 
-/**
- * Listen to preferences changes in real-time
- */
 export function subscribeToPreferences(userId, callback, errorCallback) {
   const prefsRef = doc(db, 'preferences', userId);
 
@@ -505,13 +427,8 @@ export function subscribeToPreferences(userId, callback, errorCallback) {
   );
 }
 
-// ============================================================================
 // CHAT HISTORY COLLECTION
-// ============================================================================
 
-/**
- * Add chat message to history
- */
 export async function addChatMessage(userId, message) {
   try {
     const messagesRef = collection(db, 'chatHistory');
@@ -531,9 +448,6 @@ export async function addChatMessage(userId, message) {
   }
 }
 
-/**
- * Get user's chat history
- */
 export async function getChatHistory(userId, limitCount = 100) {
   try {
     const messagesRef = collection(db, 'chatHistory');
@@ -552,9 +466,6 @@ export async function getChatHistory(userId, limitCount = 100) {
   }
 }
 
-/**
- * Clear user's chat history
- */
 export async function clearChatHistory(userId) {
   try {
     const messagesRef = collection(db, 'chatHistory');
@@ -574,9 +485,6 @@ export async function clearChatHistory(userId) {
   }
 }
 
-/**
- * Listen to chat messages in real-time
- */
 export function subscribeToChatHistory(userId, callback, errorCallback, limitCount = 100) {
   const messagesRef = collection(db, 'chatHistory');
   const q = query(
@@ -599,13 +507,8 @@ export function subscribeToChatHistory(userId, callback, errorCallback, limitCou
   );
 }
 
-// ============================================================================
 // BATCH OPERATIONS
-// ============================================================================
 
-/**
- * Batch update multiple documents
- */
 export async function batchUpdateDocuments(updates) {
   try {
     const batch = writeBatch(db);
@@ -623,9 +526,6 @@ export async function batchUpdateDocuments(updates) {
   }
 }
 
-/**
- * Delete user data (GDPR compliance)
- */
 export async function deleteUserData(userId) {
   try {
     const batch = writeBatch(db);
@@ -677,13 +577,8 @@ export async function deleteUserData(userId) {
   }
 }
 
-// ============================================================================
 // BROKERAGE CONNECTIONS COLLECTION
-// ============================================================================
 
-/**
- * Get user's brokerage connections
- */
 export async function getBrokerageStatus(userId) {
   try {
     const connectionsRef = collection(db, 'brokerageConnections');
@@ -696,9 +591,6 @@ export async function getBrokerageStatus(userId) {
   }
 }
 
-/**
- * Listen to brokerage connection changes in real-time
- */
 export function subscribeToBrokerage(userId, callback, errorCallback) {
   const connectionsRef = collection(db, 'brokerageConnections');
   const q = query(connectionsRef, where('user_id', '==', userId));

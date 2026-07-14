@@ -1,16 +1,8 @@
-/**
- * Toast Notification System
- * 
- * Provides utility functions for showing toast notifications throughout the app.
- * Uses react-hot-toast library for consistent, customizable notifications.
- */
+
 
 import toast from 'react-hot-toast';
 import { CheckCircle, XCircle, AlertCircle, Info } from 'lucide-react';
 
-/**
- * Default toast configuration
- */
 const defaultOptions = {
   duration: 4000,
   position: 'top-right',
@@ -24,9 +16,6 @@ const defaultOptions = {
   }
 };
 
-/**
- * Show success toast
- */
 export function showSuccess(message, options = {}) {
   return toast.success(message, {
     ...defaultOptions,
@@ -40,9 +29,6 @@ export function showSuccess(message, options = {}) {
   });
 }
 
-/**
- * Show error toast
- */
 export function showError(message, options = {}) {
   return toast.error(message, {
     ...defaultOptions,
@@ -57,9 +43,6 @@ export function showError(message, options = {}) {
   });
 }
 
-/**
- * Show warning toast
- */
 export function showWarning(message, options = {}) {
   return toast(message, {
     ...defaultOptions,
@@ -73,9 +56,6 @@ export function showWarning(message, options = {}) {
   });
 }
 
-/**
- * Show info toast
- */
 export function showInfo(message, options = {}) {
   return toast(message, {
     ...defaultOptions,
@@ -89,9 +69,6 @@ export function showInfo(message, options = {}) {
   });
 }
 
-/**
- * Show loading toast
- */
 export function showLoading(message = 'Loading...', options = {}) {
   return toast.loading(message, {
     ...defaultOptions,
@@ -99,23 +76,14 @@ export function showLoading(message = 'Loading...', options = {}) {
   });
 }
 
-/**
- * Dismiss a specific toast
- */
 export function dismissToast(toastId) {
   toast.dismiss(toastId);
 }
 
-/**
- * Dismiss all toasts
- */
 export function dismissAllToasts() {
   toast.dismiss();
 }
 
-/**
- * Show promise toast with loading, success, and error states
- */
 export function showPromise(promise, messages = {}) {
   return toast.promise(
     promise,
@@ -128,9 +96,6 @@ export function showPromise(promise, messages = {}) {
   );
 }
 
-/**
- * Custom toast with custom content
- */
 export function showCustom(content, options = {}) {
   return toast.custom(content, {
     ...defaultOptions,

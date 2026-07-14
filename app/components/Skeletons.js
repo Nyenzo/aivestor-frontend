@@ -1,20 +1,11 @@
-/**
- * Skeleton Loading Components
- * 
- * Provides reusable skeleton screens for better loading UX.
- * Shows content placeholders while data is being fetched.
- */
 
-// Base Skeleton component
+
+// Base Skeleton
 export function Skeleton({ className = '', width = '100%', height = '20px', rounded = '4px' }) {
   return (
     <div
-      className={`animate-pulse bg-gray-700 ${className}`}
-      style={{
-        width,
-        height,
-        borderRadius: rounded
-      }}
+      className={`animate-pulse bg-slate-200 dark:bg-slate-800 ${className}`}
+      style={{ width, height, borderRadius: rounded }}
     />
   );
 }
@@ -22,7 +13,7 @@ export function Skeleton({ className = '', width = '100%', height = '20px', roun
 // Card Skeleton
 export function CardSkeleton({ className = '' }) {
   return (
-    <div className={`bg-gray-800 rounded-lg p-6 ${className}`}>
+    <div className={`bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 ${className}`}>
       <Skeleton width="60%" height="24px" className="mb-4" />
       <Skeleton width="100%" height="16px" className="mb-2" />
       <Skeleton width="80%" height="16px" className="mb-2" />
@@ -34,7 +25,7 @@ export function CardSkeleton({ className = '' }) {
 // Table Row Skeleton
 export function TableRowSkeleton({ columns = 5 }) {
   return (
-    <tr className="border-b border-gray-700">
+    <tr className="border-b border-slate-200 dark:border-slate-800">
       {Array.from({ length: columns }).map((_, idx) => (
         <td key={idx} className="py-4 px-4">
           <Skeleton width="80%" height="16px" />
@@ -50,7 +41,7 @@ export function TableSkeleton({ rows = 5, columns = 5, className = '' }) {
     <div className={`overflow-x-auto ${className}`}>
       <table className="w-full">
         <thead>
-          <tr className="border-b border-gray-700">
+          <tr className="border-b border-slate-200 dark:border-slate-800">
             {Array.from({ length: columns }).map((_, idx) => (
               <th key={idx} className="text-left pb-3 px-4">
                 <Skeleton width="60%" height="16px" />
@@ -71,7 +62,7 @@ export function TableSkeleton({ rows = 5, columns = 5, className = '' }) {
 // Chart Skeleton
 export function ChartSkeleton({ height = '300px', className = '' }) {
   return (
-    <div className={`bg-gray-800 rounded-lg p-6 ${className}`}>
+    <div className={`bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 ${className}`}>
       <Skeleton width="40%" height="20px" className="mb-6" />
       <div className="relative" style={{ height }}>
         <Skeleton width="100%" height="100%" rounded="8px" />
@@ -83,7 +74,7 @@ export function ChartSkeleton({ height = '300px', className = '' }) {
 // Portfolio Holdings Skeleton
 export function PortfolioHoldingsSkeleton() {
   return (
-    <div className="bg-gray-800 rounded-lg p-6">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6">
       <Skeleton width="30%" height="24px" className="mb-4" />
       <TableSkeleton rows={5} columns={7} />
     </div>
@@ -95,7 +86,7 @@ export function DashboardSummarySkeleton() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
       {Array.from({ length: 4 }).map((_, idx) => (
-        <div key={idx} className="bg-gray-800 p-6 rounded-lg">
+        <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-xl">
           <Skeleton width="60%" height="16px" className="mb-4" />
           <Skeleton width="80%" height="32px" className="mb-2" />
           <Skeleton width="40%" height="14px" />
@@ -108,7 +99,7 @@ export function DashboardSummarySkeleton() {
 // Stock Item Skeleton
 export function StockItemSkeleton() {
   return (
-    <div className="bg-gray-800 p-4 rounded-lg">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-xl">
       <div className="flex justify-between items-center mb-2">
         <Skeleton width="60px" height="20px" />
         <Skeleton width="80px" height="20px" />
@@ -164,7 +155,7 @@ export function MarketTickerSkeleton() {
   return (
     <div className="flex gap-4 overflow-hidden">
       {Array.from({ length: 10 }).map((_, idx) => (
-        <div key={idx} className="flex items-center gap-2 bg-gray-800 px-4 py-2 rounded-lg whitespace-nowrap">
+        <div key={idx} className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-4 py-2 rounded-lg whitespace-nowrap">
           <Skeleton width="60px" height="16px" />
           <Skeleton width="80px" height="16px" />
           <Skeleton width="60px" height="16px" />
@@ -192,7 +183,7 @@ export function ProfileFormSkeleton() {
 // News Card Skeleton
 export function NewsCardSkeleton() {
   return (
-    <div className="bg-gray-800 rounded-lg p-4">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
       <Skeleton width="100%" height="120px" rounded="8px" className="mb-3" />
       <Skeleton width="80%" height="20px" className="mb-2" />
       <Skeleton width="100%" height="16px" className="mb-2" />
@@ -219,7 +210,7 @@ export function NewsListSkeleton({ count = 6 }) {
 // Transaction Item Skeleton
 export function TransactionItemSkeleton() {
   return (
-    <div className="flex justify-between items-center bg-gray-800 p-4 rounded-lg">
+    <div className="flex justify-between items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-xl">
       <div className="flex items-center gap-3">
         <Skeleton width="40px" height="40px" rounded="50%" />
         <div>
@@ -249,7 +240,7 @@ export function TransactionListSkeleton({ count = 5 }) {
 // Full Page Skeleton
 export function FullPageSkeleton() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 p-6">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6">
       <div className="max-w-7xl mx-auto">
         <Skeleton width="300px" height="40px" className="mb-8" />
         <DashboardSummarySkeleton />

@@ -1,53 +1,37 @@
 'use client';
 
-/**
- * Navigation Sidebar Component
- * 
- * Provides persistent navigation for authenticated users.
- * Includes user profile, main menu items, and logout functionality.
- */
+// Aivestor navigation sidebar for authenticated users
 
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import {
-  LayoutDashboard,
-  Briefcase,
-  MessageSquare,
-  Settings,
-  LogOut,
-  Menu,
-  X,
-  TrendingUp,
-  User,
-  Link2
-} from 'lucide-react';
 import { showSuccess } from '../lib/toast';
+import Logo from './Logo';
 
 const menuItems = [
   {
     label: 'Dashboard',
     href: '/dashboard',
-    icon: LayoutDashboard
+    icon: 'dashboard'
   },
   {
     label: 'Portfolio',
     href: '/portfolio',
-    icon: Briefcase
+    icon: 'pie_chart'
   },
   {
     label: 'AI Chat',
     href: '/chat',
-    icon: MessageSquare
+    icon: 'chat'
   },
   {
-    label: 'Brokerage',
+    label: 'Exchange',
     href: '/brokerage',
-    icon: Link2
+    icon: 'swap_horiz'
   },
   {
     label: 'Settings',
     href: '/settings',
-    icon: Settings
+    icon: 'settings'
   }
 ];
 
@@ -57,12 +41,12 @@ export default function Navigation() {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Don't show nav on auth pages
-  const authPages = ['/login', '/register', '/forgot-password', '/onboarding'];
-  const isAuthPage = authPages.includes(pathname) || pathname === '/';
+  // Hide sidebar on non-authenticated pages
+  const noNavPages = ['/login', '/register', '/forgot-password', '/onboarding', '/', '/analytics', '/settings'];
+  const hideSidebar = noNavPages.includes(pathname);
 
   useEffect(() => {
-    // Get user from localStorage
+    // Fetch user session data
     const userData = localStorage.getItem('user');
     if (userData) {
       try {
@@ -80,107 +64,103 @@ export default function Navigation() {
     router.push('/login');
   };
 
-  if (isAuthPage) {
+  if (hideSidebar) {
     return null;
   }
 
   return (
     <>
-      {/* Mobile Menu Button */}
+
       <button
+        aria-label="Toggle mobile menu"
         onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-gray-800 rounded-lg hover:bg-gray-700 transition"
+        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-600 hover:text-slate-900 dark:hover:text-white transition-colors"
       >
-        {isOpen ? <X size={24} /> : <Menu size={24} />}
+        <span className="material-symbols-outlined">{isOpen ? 'close' : 'menu'}</span>
       </button>
 
-      {/* Overlay for mobile */}
       {isOpen && (
         <div
-          className="md:hidden fixed inset-0 bg-black/50 z-40"
+          className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity"
           onClick={() => setIsOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
-      <nav
+      <aside
         className={`
-          fixed top-0 left-0 h-screen w-64 bg-gray-900 border-r border-gray-800 
-          flex flex-col z-40 transition-transform duration-300
-          ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-          md:translate-x-0
+          flex-shrink-0 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800
+          flex flex-col flex-nowrap z-40 transition-transform duration-300
+          fixed top-[30px] left-0 h-[calc(100vh-30px)]
+          ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+          overflow-y-auto
         `}
       >
-        {/* Logo */}
-        <div className="p-6 border-b border-gray-800">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-              <TrendingUp size={24} />
-            </div>
-            <span className="text-xl font-bold">Aivestor</span>
-          </div>
-        </div>
+        <div className="flex flex-col gap-8 p-6">
 
-        {/* User Profile */}
-        {user && (
-          <div className="p-4 border-b border-gray-800">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
-                <User size={20} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">
-                  {user.displayName || user.email?.split('@')[0] || 'User'}
-                </p>
-                <p className="text-xs text-gray-400 truncate">{user.email}</p>
-              </div>
+          <div className="flex items-center gap-4">
+            <div
+              className="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-12 w-12 ring-2 ring-primary/30 flex items-center justify-center bg-slate-100 dark:bg-slate-800"
+              title={user?.email || 'User'}
+            >
+
+              <Logo className="w-8 h-8" />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <h1 className="text-slate-900 dark:text-white font-display text-lg font-bold tracking-wide truncate">Aivestor</h1>
+              <span className="text-primary text-[10px] font-mono uppercase tracking-wider bg-primary/10 px-2 py-0.5 rounded border border-primary/20 w-fit truncate max-w-full">
+                {user ? (user.displayName || user.name || user.email?.split('@')[0] || 'Pro') : 'Pro'}
+              </span>
             </div>
           </div>
-        )}
 
-        {/* Navigation Menu */}
-        <div className="flex-1 overflow-y-auto p-4">
-          <ul className="space-y-2">
+          <nav className="flex flex-col gap-2">
             {menuItems.map((item) => {
-              const Icon = item.icon;
               const isActive = pathname === item.href;
 
-              return (
-                <li key={item.href}>
+              if (isActive) {
+                return (
                   <a
+                    key={item.href}
                     href={item.href}
-                    className={`
-                      flex items-center gap-3 px-4 py-3 rounded-lg transition
-                      ${isActive
-                        ? 'bg-blue-600 text-white'
-                        : 'text-gray-300 hover:bg-gray-800'
-                      }
-                    `}
+                    aria-current="page"
+                    className="flex items-center gap-4 px-4 py-3 rounded-lg bg-primary/10 border border-primary/20 text-primary text-sm font-bold transition-all"
                     onClick={() => setIsOpen(false)}
                   >
-                    <Icon size={20} />
-                    <span className="font-medium">{item.label}</span>
+                    <span className="material-symbols-outlined text-primary fill-1">{item.icon}</span>
+                    <span>{item.label}</span>
                   </a>
-                </li>
+                );
+              }
+
+              return (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  className="flex items-center gap-4 px-4 py-3 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-all group text-sm font-medium"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <span className="material-symbols-outlined text-slate-500 group-hover:text-primary transition-colors">
+                    {item.icon}
+                  </span>
+                  <span>{item.label}</span>
+                </a>
               );
             })}
-          </ul>
+          </nav>
         </div>
 
-        {/* Logout Button */}
-        <div className="p-4 border-t border-gray-800">
+        <div className="p-6 border-t border-slate-200 dark:border-slate-800">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-red-400 hover:bg-gray-800 transition"
+            className="w-full flex items-center gap-4 px-4 py-3 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all group text-sm font-medium"
           >
-            <LogOut size={20} />
-            <span className="font-medium">Logout</span>
+            <span className="material-symbols-outlined text-red-500/70 group-hover:text-red-400 transition-colors">
+              logout
+            </span>
+            <span>Logout</span>
           </button>
         </div>
-      </nav>
-
-      {/* Spacer for desktop layout */}
-      <div className="hidden md:block w-64 flex-shrink-0" />
+      </aside>
     </>
   );
 }

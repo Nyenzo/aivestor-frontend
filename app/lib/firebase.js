@@ -1,15 +1,7 @@
-/**
- * Firebase Configuration and Initialization
- * 
- * This module initializes Firebase services including Firestore for the Aivestor application.
- * It uses environment variables for configuration to support multiple environments.
- */
-
 import { initializeApp, getApps } from 'firebase/app';
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
-import { getAuth, connectAuthEmulator, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 
-// Firebase configuration from environment variables
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -20,40 +12,50 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
-// Initialize Firebase app (only once)
 let app;
-if (!getApps().length) {
-  app = initializeApp(firebaseConfig);
-} else {
-  app = getApps()[0];
+export let db = null;
+export let auth = null;
+export let googleProvider = null;
+
+if (firebaseConfig.apiKey) {
+  app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+
+  // Use modern persistent cache API (replaces deprecated enableIndexedDbPersistence)
+  if (typeof window !== 'undefined') {
+    try {
+      db = initializeFirestore(app, {
+        cache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+      });
+    } catch {
+      const { getFirestore } = require('firebase/firestore');
+      db = getFirestore(app);
+    }
+  } else {
+    const { getFirestore } = require('firebase/firestore');
+    db = getFirestore(app);
+  }
+
+  auth = getAuth(app);
+  googleProvider = new GoogleAuthProvider();
 }
 
-// Initialize Firestore
-export const db = getFirestore(app);
-
-// Initialize Auth
-export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
-
 export const signInWithGoogle = async () => {
+  if (!auth || !googleProvider) throw new Error('Firebase Auth not initialized');
   try {
-    const result = await signInWithPopup(auth, googleProvider);
-    return result;
+    return await signInWithPopup(auth, googleProvider);
   } catch (error) {
-    console.error("Error signing in with Google", error);
-    throw error;
+    if (/popup|cancelled|closed/i.test(error?.code || error?.message || '')) {
+      throw error;
+    }
+    await signInWithRedirect(auth, googleProvider);
+    return null;
   }
 };
 
-// Connect to emulators in development if enabled
-if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === 'true') {
-  try {
-    connectFirestoreEmulator(db, 'localhost', 8080);
-    connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
-    console.log('Connected to Firebase emulators');
-  } catch (error) {
-    console.warn('Failed to connect to Firebase emulators:', error.message);
-  }
-}
+// Extracted result handler for redirects
+export const handleRedirectResult = async () => {
+  if (!auth) return null;
+  return await getRedirectResult(auth);
+};
 
 export default app;

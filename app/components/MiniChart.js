@@ -4,8 +4,11 @@
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 
 export default function MiniChart({ data = [], isPositive = true, className = '' }) {
-  // Generate dummy data if none provided
-  const chartData = data.length > 0 ? data : generateDummyData(isPositive);
+  const chartData = data.filter((point) => Number.isFinite(point?.value));
+
+  if (chartData.length === 0) {
+    return <div className={`w-full h-12 ${className}`} aria-hidden="true" />;
+  }
 
   return (
     <div className={`w-full h-12 ${className}`}>
@@ -23,18 +26,4 @@ export default function MiniChart({ data = [], isPositive = true, className = ''
       </ResponsiveContainer>
     </div>
   );
-}
-
-function generateDummyData(isPositive) {
-  const points = 20;
-  const data = [];
-  let value = 100;
-  
-  for (let i = 0; i < points; i++) {
-    const change = (Math.random() - 0.5) * 5;
-    value += isPositive ? Math.abs(change) * 0.3 : -Math.abs(change) * 0.3;
-    data.push({ value: value + Math.random() * 10 });
-  }
-  
-  return data;
 }

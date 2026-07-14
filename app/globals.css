@@ -97,6 +97,38 @@ button,
   will-change: transform;
 }
 
+.market-ticker-static {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #cbd5e1;
+}
+
+.market-ticker-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 18px;
+  height: 100%;
+  white-space: nowrap;
+  color: #93c5fd;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  border-right: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(30, 64, 175, 0.18);
+}
+
+.market-ticker-label span {
+  color: #cbd5e1;
+  font-size: 10px;
+  font-weight: 800;
+}
+
 .market-ticker-shell:hover .market-ticker-track {
   animation-play-state: paused;
 }

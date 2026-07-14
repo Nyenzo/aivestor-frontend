@@ -1,12 +1,10 @@
-import StitchFrame from "../components/StitchFrame";
+import { AuthScreen } from "../components/AppScreens";
 
 export const dynamic = "force-static";
 export const revalidate = 300;
 export const fetchCache = "force-cache";
-export const metadata = {
-  title: "Verify Email | Aivestor",
-};
+export const metadata = { title: "Verify Email | Aivestor" };
 
 export default function VerifyEmailPage() {
-  return <StitchFrame title="Verify Email" src="/stitch/authentication-light.html" />;
+  return <AuthScreen mode="verify" />;
 }

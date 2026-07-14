@@ -43,7 +43,7 @@ export default function PortfolioChart({ data = [], timeframe = '1D' }) {
 
   return (
     <div className="w-full">
-      {/* Timeframe selector */}
+      {}
       <div className="flex gap-2 mb-4">
         {timeframes.map((tf) => (
           <button
@@ -60,7 +60,7 @@ export default function PortfolioChart({ data = [], timeframe = '1D' }) {
         ))}
       </div>
 
-      {/* Chart */}
+      {}
       <div className="h-64 sm:h-80">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>

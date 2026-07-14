@@ -12,6 +12,7 @@
 /coverage
 /test-results
 /playwright-report
+.playwright-cli/
 
 # Next.js
 /.next/
@@ -45,3 +46,7 @@ Thumbs.db
 # Misc
 *.pem
 .eslintcache
+screenshots/
+stitch-pages/
+templates/
+output/

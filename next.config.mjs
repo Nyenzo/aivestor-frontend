@@ -1,20 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     async headers() {
+        const isProduction = process.env.NODE_ENV === 'production';
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
         const aiUrl = process.env.NEXT_PUBLIC_AI_URL || 'http://localhost:5001';
         const socketUrl = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:5000';
 
         // Ensure WebSocket allows secure and insecure
         const wsUrl = socketUrl.replace(/^http/, 'ws');
-        const connectSources = Array.from(new Set([
-            "'self'",
-            'ws:',
-            'wss:',
-            apiUrl,
-            aiUrl,
-            socketUrl,
-            wsUrl,
+        const localConnectSources = isProduction ? [] : [
             'http://localhost:5000',
             'http://localhost:5005',
             'http://127.0.0.1:5000',
@@ -23,6 +17,22 @@ const nextConfig = {
             'ws://localhost:5005',
             'ws://127.0.0.1:5000',
             'ws://127.0.0.1:5005',
+        ];
+        const scriptSources = [
+            "'self'",
+            "'unsafe-inline'",
+            !isProduction ? "'unsafe-eval'" : null,
+            'https://apis.google.com',
+        ].filter(Boolean).join(' ');
+        const connectSources = Array.from(new Set([
+            "'self'",
+            'ws:',
+            'wss:',
+            apiUrl,
+            aiUrl,
+            socketUrl,
+            wsUrl,
+            ...localConnectSources,
             'https://identitytoolkit.googleapis.com',
             'https://securetoken.googleapis.com',
             'https://api.deepseek.com',
@@ -56,16 +66,7 @@ const nextConfig = {
                     },
                     {
                         key: 'Content-Security-Policy',
-                        value: `default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src ${connectSources}; frame-src 'self' https://*.firebaseapp.com https://aivestor-fd289.firebaseapp.com`
-                    }
-                ]
-            },
-            {
-                source: '/stitch/:path*',
-                headers: [
-                    {
-                        key: 'Cache-Control',
-                        value: 'public, max-age=300, stale-while-revalidate=86400'
+                        value: `default-src 'self'; script-src ${scriptSources}; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src ${connectSources}; frame-src 'self' https://*.firebaseapp.com https://aivestor-fd289.firebaseapp.com`
                     }
                 ]
             },

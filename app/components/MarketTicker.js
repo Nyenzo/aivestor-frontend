@@ -5,22 +5,82 @@ import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+const MARKET_SYMBOLS = 'AAPL,MSFT,NVDA,AMZN,GOOGL,META,TSLA,^GSPC,^DJI,^IXIC,GC=F,CL=F,BTC-USD,ETH-USD';
+const CACHE_KEY = 'aivestor.marketTicker.v1';
+const CACHE_TTL_MS = 30000;
+
+async function fetchLiveMarkets() {
+  const cached = readCachedMarkets();
+  if (cached && Date.now() - cached.cachedAt < CACHE_TTL_MS) return cached.data;
+
+  const bases = Array.from(new Set([
+    process.env.NEXT_PUBLIC_API_URL,
+    'http://localhost:5005',
+    'http://localhost:5000',
+  ].filter(Boolean)));
+
+  let lastError;
+  for (const base of bases) {
+    try {
+      const response = await fetch(`${base}/api/market/quotes?symbols=${encodeURIComponent(MARKET_SYMBOLS)}`, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+      const data = await response.json();
+      const markets = (data.quotes || []).map((quote) => ({
+        symbol: quote.symbol.replace(/^\^/, '').replace('-USD', ''),
+        price: Number(quote.price) || 0,
+        change: Number(quote.changePercent) || 0,
+        isPositive: Number(quote.changePercent) >= 0,
+      }));
+      writeCachedMarkets(markets);
+      return markets;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (cached?.data?.length) return cached.data;
+  throw lastError || new Error('Unable to load Yahoo Finance market data');
+}
+
+function readCachedMarkets() {
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedMarkets(data) {
+  try {
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify({ cachedAt: Date.now(), data }));
+  } catch {}
+}
+
 export default function MarketTicker({ markets = [] }) {
-  const [tickerData, setTickerData] = useState([
-    { symbol: 'FTSE 100', price: 9722.31, change: 0.08, isPositive: true },
-    { symbol: 'FTSE 250', price: 22025.06, change: 0.13, isPositive: true },
-    { symbol: 'S&P 500', price: 5973.10, change: 0.38, isPositive: true },
-    { symbol: 'DOW JONES', price: 43988.99, change: 0.59, isPositive: true },
-    { symbol: 'NASDAQ', price: 19286.78, change: 0.09, isPositive: true },
-    { symbol: 'DAX', price: 19254.97, change: -0.23, isPositive: false },
-    { symbol: 'NIKKEI 225', price: 39500.37, change: 0.28, isPositive: true },
-  ]);
+  const [tickerData, setTickerData] = useState(markets);
 
   useEffect(() => {
     if (markets && markets.length > 0) {
       setTickerData(markets);
+      return;
     }
+
+    let cancelled = false;
+    fetchLiveMarkets()
+      .then((data) => {
+        if (!cancelled) setTickerData(data);
+      })
+      .catch(() => {
+        if (!cancelled) setTickerData([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [markets]);
+
+  if (tickerData.length === 0) return null;
 
   // Duplicate the array for seamless loop
   const duplicatedTicker = [...tickerData, ...tickerData];

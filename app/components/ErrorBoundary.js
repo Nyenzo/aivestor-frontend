@@ -3,16 +3,10 @@
 import React from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
-/**
- * Error Boundary Component
- * 
- * Catches JavaScript errors anywhere in the component tree and displays a fallback UI.
- * Prevents the entire app from crashing due to errors in a single component.
- */
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { 
+    this.state = {
       hasError: false,
       error: null,
       errorInfo: null
@@ -27,18 +21,18 @@ class ErrorBoundary extends React.Component {
   componentDidCatch(error, errorInfo) {
     // Log error details for debugging
     console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
+
     this.setState({
       error,
       errorInfo
     });
-    
+
     // You can also log the error to an error reporting service here
     // e.g., Sentry, LogRocket, etc.
   }
 
   handleReset = () => {
-    this.setState({ 
+    this.setState({
       hasError: false,
       error: null,
       errorInfo: null
@@ -58,11 +52,11 @@ class ErrorBoundary extends React.Component {
               <div>
                 <h1 className="text-2xl font-bold text-white">Something went wrong</h1>
                 <p className="text-gray-400">
-                  We're sorry for the inconvenience. An unexpected error has occurred.
+                  We&apos;re sorry for the inconvenience. An unexpected error has occurred.
                 </p>
               </div>
             </div>
-            
+
             {process.env.NODE_ENV === 'development' && this.state.error && (
               <div className="bg-black/40 p-4 rounded-lg mb-6 overflow-auto max-h-64">
                 <p className="text-red-400 font-mono text-sm mb-2">
@@ -75,7 +69,7 @@ class ErrorBoundary extends React.Component {
                 )}
               </div>
             )}
-            
+
             <div className="flex gap-4">
               <button
                 onClick={this.handleReset}

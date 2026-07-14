@@ -48,12 +48,12 @@ export default function StockItem({
         </div>
       </div>
 
-      {/* Mini chart */}
+      {}
       <div className="mb-3">
         <MiniChart data={chartData} isPositive={isPositive} />
       </div>
 
-      {/* Total value if shares provided */}
+      {}
       {totalValue && showValue && (
         <div className="pt-3 border-t border-gray-700/50 flex items-center justify-between">
           <span className="text-gray-400 text-sm">Total Value</span>
@@ -66,7 +66,7 @@ export default function StockItem({
         </div>
       )}
 
-      {/* After hours change indicator */}
+      {}
       {Math.random() > 0.5 && (
         <div className="pt-2 flex items-center gap-2 text-xs text-gray-500">
           <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></div>
